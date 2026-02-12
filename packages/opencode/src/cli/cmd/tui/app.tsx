@@ -124,6 +124,7 @@ export function tui(input: {
     // Load TUI visual effect modules
     const postProcessFns: ((buffer: any, deltaTime: number) => void)[] = []
     const cleanups: (() => void)[] = []
+    const hasEffects = (input.effectPaths ?? []).length > 0
     for (const path of input.effectPaths ?? []) {
       const mod = await import(path).catch(() => null)
       if (!mod) continue
@@ -168,6 +169,7 @@ export function tui(input: {
                                       <FrecencyProvider>
                                         <PromptHistoryProvider>
                                           <PromptRefProvider>
+                                            <EffectsRunner active={hasEffects} />
                                             <App />
                                           </PromptRefProvider>
                                         </PromptHistoryProvider>
@@ -206,6 +208,18 @@ export function tui(input: {
       },
     )
   })
+}
+
+/**
+ * Forces continuous rendering when TUI visual effects are active.
+ * Without this, the render loop only runs on UI changes and
+ * time-driven effects (scanline drift, flicker, etc.) would freeze.
+ */
+function EffectsRunner(props: { active: boolean }) {
+  if (!props.active) return null
+  const renderer = useRenderer()
+  onMount(() => renderer.start())
+  return null
 }
 
 function App() {

@@ -142,7 +142,7 @@ export const rpc = {
     if (server) server.stop(true)
   },
   async resolveEffects() {
-    const config = await Config.get()
+    const config = await Config.getGlobal()
     const effects = config.tui?.effects ?? []
     const resolved: string[] = []
     for (const effect of effects) {
