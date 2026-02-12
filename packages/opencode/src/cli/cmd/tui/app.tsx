@@ -107,6 +107,7 @@ export function tui(input: {
   fetch?: typeof fetch
   headers?: RequestInit["headers"]
   events?: EventSource
+  effectPaths?: string[]
   onExit?: () => Promise<void>
 }) {
   // promise to prevent immediate exit
@@ -120,7 +121,20 @@ export function tui(input: {
     // the original console mode which re-enables ENABLE_PROCESSED_INPUT.
     win32DisableProcessedInput()
 
+    // Load TUI visual effect modules
+    const postProcessFns: ((buffer: any, deltaTime: number) => void)[] = []
+    const cleanups: (() => void)[] = []
+    for (const path of input.effectPaths ?? []) {
+      const mod = await import(path).catch(() => null)
+      if (!mod) continue
+      const register = mod.default ?? mod.register
+      if (typeof register !== "function") continue
+      const result = register({ postProcessFns, cleanups })
+      if (typeof result === "function") cleanups.push(result)
+    }
+
     const onExit = async () => {
+      for (const cleanup of cleanups) cleanup()
       unguard?.()
       await input.onExit?.()
       resolve()
@@ -180,6 +194,7 @@ export function tui(input: {
         exitOnCtrlC: false,
         useKittyKeyboard: {},
         autoFocus: false,
+        postProcessFns: postProcessFns.length > 0 ? postProcessFns : undefined,
         consoleOptions: {
           keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
           onCopySelection: (text) => {

@@ -928,6 +928,11 @@ export namespace Config {
       .enum(["auto", "stacked"])
       .optional()
       .describe("Control diff rendering style: 'auto' adapts to terminal width, 'stacked' always shows single column"),
+    effects: z
+      .string()
+      .array()
+      .optional()
+      .describe("NPM packages providing TUI visual post-processing effects"),
   })
 
   export const Server = z

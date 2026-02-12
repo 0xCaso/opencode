@@ -10,6 +10,7 @@ import { GlobalBus } from "@/bus/global"
 import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2"
 import type { BunWebSocketData } from "hono/bun"
 import { Flag } from "@/flag/flag"
+import { BunProc } from "@/bun"
 
 await Log.init({
   print: process.argv.includes("--print-logs"),
@@ -139,6 +140,22 @@ export const rpc = {
     if (eventStream.abort) eventStream.abort.abort()
     await Instance.disposeAll()
     if (server) server.stop(true)
+  },
+  async resolveEffects() {
+    const config = await Config.get()
+    const effects = config.tui?.effects ?? []
+    const resolved: string[] = []
+    for (const effect of effects) {
+      const last = effect.lastIndexOf("@")
+      const pkg = last > 0 ? effect.substring(0, last) : effect
+      const version = last > 0 ? effect.substring(last + 1) : "latest"
+      const mod = await BunProc.install(pkg, version).catch((e) => {
+        Log.Default.error("failed to install tui effect", { pkg, version, error: e instanceof Error ? e.message : e })
+        return ""
+      })
+      if (mod) resolved.push(mod)
+    }
+    return { effects: resolved }
   },
 }
 

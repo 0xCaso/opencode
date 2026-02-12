@@ -159,10 +159,15 @@ export const TuiThreadCommand = cmd({
         events = createEventSource(client)
       }
 
+      // Resolve TUI visual effect packages from config
+      const resolved = await client.call("resolveEffects", undefined).catch(() => ({ effects: [] as string[] }))
+      const effectPaths = (await resolved).effects
+
       const tuiPromise = tui({
         url,
         fetch: customFetch,
         events,
+        effectPaths: effectPaths,
         args: {
           continue: args.continue,
           sessionID: args.session,
