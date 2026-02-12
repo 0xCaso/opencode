@@ -146,6 +146,10 @@ export const rpc = {
     const effects = config.tui?.effects ?? []
     const resolved: string[] = []
     for (const effect of effects) {
+      if (effect.startsWith("file://")) {
+        resolved.push(effect.slice(7))
+        continue
+      }
       const last = effect.lastIndexOf("@")
       const pkg = last > 0 ? effect.substring(0, last) : effect
       const version = last > 0 ? effect.substring(last + 1) : "latest"
